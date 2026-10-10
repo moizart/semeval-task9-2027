@@ -4,7 +4,7 @@ Assignment 1 implementation for Subtask 2. The original plan is in `PLAN.md`. Ea
 
 ## macOS setup
 
-For a local Mac checkout, `scripts/setup-mac.sh` clones or updates the `work` branch, creates `.venv`, installs the base requirements, and runs the contract tests. Its default target is `/Users/abdulmoiz/Documents/Semeval Task9`. It stops if that folder contains unrelated files. The script does not download organizer data or a pretrained checkpoint.
+For a local Mac checkout, `scripts/setup-mac.sh` clones or updates the `work` branch, creates `.venv`, installs the base requirements, and runs the contract tests. Its default target is `/Users/abdulmoiz/Documents/Semeval Task9`. It selects a working Python 3.11–3.13 installation (preferring 3.12) and can rebuild a partial `.venv` left by a failed setup. It stops if the target contains unrelated files. The script does not download organizer data or a pretrained checkpoint.
 
 ## Input contract
 

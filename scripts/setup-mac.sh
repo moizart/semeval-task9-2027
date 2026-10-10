@@ -8,12 +8,27 @@ if ! command -v git >/dev/null 2>&1; then
   echo "Git is required. Install Git, then run this script again." >&2
   exit 1
 fi
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "Python 3 is required. Install Python 3.11 or newer, then run this script again." >&2
-  exit 1
-fi
-if ! python3 -c 'import sys; raise SystemExit(sys.version_info < (3, 11))'; then
-  echo "Python 3.11 or newer is required. Current version: $(python3 --version)" >&2
+python_cmd=""
+for candidate in python3.12 python3.11 python3.13 python3; do
+  if ! command -v "$candidate" >/dev/null 2>&1; then
+    continue
+  fi
+  if ! "$candidate" -c 'import sys; raise SystemExit(not ((3, 11) <= sys.version_info[:2] <= (3, 13)))'; then
+    continue
+  fi
+  # Check venv and pip before changing the project. Some Python builds omit ensurepip.
+  probe_dir="$(mktemp -d)"
+  if "$candidate" -m venv "$probe_dir/venv" >/dev/null 2>&1 &&
+      "$probe_dir/venv/bin/python" -m pip --version >/dev/null 2>&1; then
+    python_cmd="$(command -v "$candidate")"
+    rm -rf "$probe_dir"
+    break
+  fi
+  rm -rf "$probe_dir"
+done
+if [ -z "$python_cmd" ]; then
+  echo "No working Python 3.11-3.13 with venv and pip was found." >&2
+  echo "Install Python 3.12 (for example: brew install python@3.12), then rerun this script." >&2
   exit 1
 fi
 
@@ -38,7 +53,16 @@ else
   git clone --branch work --single-branch "$repository_url" "$project_dir"
 fi
 
-python3 -m venv "$project_dir/.venv"
+if [ -e "$project_dir/.venv" ]; then
+  if [ ! -f "$project_dir/.venv/pyvenv.cfg" ]; then
+    echo "$project_dir/.venv exists but is not a Python virtual environment. Nothing was changed." >&2
+    exit 1
+  fi
+  # Rebuild a partial environment left by a failed ensurepip invocation.
+  "$python_cmd" -m venv --clear "$project_dir/.venv"
+else
+  "$python_cmd" -m venv "$project_dir/.venv"
+fi
 "$project_dir/.venv/bin/python" -m pip install -r "$project_dir/requirements.txt"
 (
   cd "$project_dir"
@@ -48,5 +72,6 @@ python3 -m venv "$project_dir/.venv"
 
 echo
 echo "Project ready at: $project_dir"
+echo "Base Python: $python_cmd"
 echo "Python: $project_dir/.venv/bin/python"
 echo "Next: add organizer data and data/manifest.csv, then follow README.md."

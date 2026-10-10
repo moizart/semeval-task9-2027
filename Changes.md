@@ -10,3 +10,5 @@
 - Separated the organizer image identifier from its optional local image path so responses contain the required filename when images live in nested folders.
 - Added per-frame feature-association output and a text/image context comparison to the audit. Re-ran the EDA workflow and four contract tests successfully.
 - Added a guarded macOS setup script for `/Users/abdulmoiz/Documents/Semeval Task9`; it clones or updates the project, creates a virtual environment, installs base dependencies, and runs the contract tests without touching an unrelated nonempty folder.
+- Updated the macOS setup script after a Python 3.14 `ensurepip` failure: it now probes working Python 3.11–3.13 installations, prefers 3.12, and rebuilds only a recognized partial virtual environment.
+- Verified the revised setup in a clean checkout with Python 3.12, installed current base dependencies, passed all four contract tests, and ran classical training plus response generation on synthetic data.
