@@ -2,6 +2,10 @@
 
 Assignment 1 implementation for Subtask 2. The original plan is in `PLAN.md`. Each row represents one **image** with its associated article. The image's zero or more framing labels are the target. Article framing labels, if supplied, are context for variant 2b only.
 
+## macOS setup
+
+For a local Mac checkout, `scripts/setup-mac.sh` clones or updates the `work` branch, creates `.venv`, installs the base requirements, and runs the contract tests. Its default target is `/Users/abdulmoiz/Documents/Semeval Task9`. It stops if that folder contains unrelated files. The script does not download organizer data or a pretrained checkpoint.
+
 ## Input contract
 
 Create `data/manifest.csv` with these columns:

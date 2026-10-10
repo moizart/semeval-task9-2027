@@ -9,3 +9,4 @@
 - Located the official label and trial ZIP URLs in the task PDF, but the configured cloud proxy refused the connection, so neither file could be retrieved.
 - Separated the organizer image identifier from its optional local image path so responses contain the required filename when images live in nested folders.
 - Added per-frame feature-association output and a text/image context comparison to the audit. Re-ran the EDA workflow and four contract tests successfully.
+- Added a guarded macOS setup script for `/Users/abdulmoiz/Documents/Semeval Task9`; it clones or updates the project, creates a virtual environment, installs base dependencies, and runs the contract tests without touching an unrelated nonempty folder.
