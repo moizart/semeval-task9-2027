@@ -1,5 +1,7 @@
 # Assignment 1 submission plan: SemEval 2027 Task 9, Subtask 2
 
+Implementation update, 10 October 2026: The public organizer trial ZIP was downloaded and imported successfully (20 labeled images, five per language), and the audit, EDA, classical baseline, and frozen ResNet-18 baseline have been run. The ZIP's `labels.txt` is the exact machine vocabulary for its gold files; the task-page `framing-labels.txt` uses readable strings and must not be used verbatim for these annotations. The full training dataset, starter kit, and official scorer are still unavailable in this workspace. The original planning notes below predate these findings and are retained for context; see `README.md` and `report/main.tex` for current workflow and trial results.
+
 Status: planning document. The assignment guidelines and a PDF capture of the official task page were read. The uploaded dataset ZIP exceeded the available 32 MiB transfer limit, so its contents and counts remain uninspected. The live task site is blocked by the cloud network proxy; its domain was saved in the environment draft for later review and publication.
 
 ## 1. Lock the task specification before modeling

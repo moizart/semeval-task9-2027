@@ -1,0 +1,7 @@
+model,mode,fit_rows,calibration_rows,evaluation_rows,threshold,micro_f1,macro_f1,tp,fp,fn,zero_label_errors
+classical,image_only,14,3,3,0.25,0.0,0.0,0,9,2,1
+classical,2a_image_text,14,3,3,0.25,0.0,0.0,0,9,2,1
+classical,2b_image_text_gold,14,3,3,0.45,0.0,0.0,0,7,2,1
+frozen,image_only,14,3,3,0.6,0.0,0.0,0,1,2,0
+frozen,2a_image_text,14,3,3,0.6,0.0,0.0,0,1,2,0
+frozen,2b_image_text_gold,14,3,3,0.55,0.0,0.0,0,1,2,0

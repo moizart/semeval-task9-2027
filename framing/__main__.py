@@ -12,6 +12,9 @@ from .scoring import score_tsv
 def main() -> None:
     parser = argparse.ArgumentParser(description="SemEval Task 9 Subtask 2 baseline workflow")
     sub = parser.add_subparsers(dest="command", required=True)
+    prepare = sub.add_parser("prepare-trial")
+    prepare.add_argument("--archive", required=True, type=Path)
+    prepare.add_argument("--out", required=True, type=Path)
     for name in ("audit", "eda", "train", "predict"):
         item = sub.add_parser(name)
         item.add_argument("--manifest", required=True, type=Path)
@@ -34,6 +37,10 @@ def main() -> None:
     score.add_argument("--labels", required=True, type=Path)
     score.add_argument("--none-mode", choices=["exclude", "include"], default="exclude")
     args = parser.parse_args()
+    if args.command == "prepare-trial":
+        from .trial import prepare_trial
+        print(json.dumps(prepare_trial(args.archive, args.out), indent=2))
+        return
     labels = read_labels(args.labels)
     if args.command == "score":
         print(json.dumps(score_tsv(args.gold, args.response, labels, args.none_mode), indent=2))

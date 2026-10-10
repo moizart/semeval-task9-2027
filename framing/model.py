@@ -54,10 +54,30 @@ def split_groups(frame: pd.DataFrame, y: np.ndarray, seed: int) -> np.ndarray:
 def frozen_features(paths: list[Path], checkpoint: str, batch_size: int = 16) -> np.ndarray:
     try:
         import torch
-        from transformers import AutoImageProcessor, AutoModel
     except ImportError as exc:
         raise RuntimeError("Frozen baseline needs requirements-pretrained.txt") from exc
     from .data import image_rgb
+    if checkpoint == "torchvision:resnet18":
+        try:
+            from torchvision.models import ResNet18_Weights, resnet18
+        except ImportError as exc:
+            raise RuntimeError("ResNet18 needs torchvision from requirements-pretrained.txt") from exc
+        weights = ResNet18_Weights.IMAGENET1K_V1
+        processor = weights.transforms()
+        model = resnet18(weights=weights).eval()
+        model.fc = torch.nn.Identity()
+        for parameter in model.parameters():
+            parameter.requires_grad_(False)
+        chunks = []
+        with torch.inference_mode():
+            for start in range(0, len(paths), batch_size):
+                images = torch.stack([processor(image_rgb(p)) for p in paths[start:start + batch_size]])
+                chunks.append(model(images).float().cpu().numpy())
+        return np.vstack(chunks).astype(np.float32)
+    try:
+        from transformers import AutoImageProcessor, AutoModel
+    except ImportError as exc:
+        raise RuntimeError("Hugging Face checkpoint needs transformers from requirements-pretrained.txt") from exc
     processor = AutoImageProcessor.from_pretrained(checkpoint, local_files_only=True)
     model = AutoModel.from_pretrained(checkpoint, local_files_only=True).eval()
     for parameter in model.parameters():
@@ -175,9 +195,13 @@ def train(frame: pd.DataFrame, root: Path, labels: list[str], out: Path, kind: s
     snapshot = train_frame.copy()
     snapshot["internal_split"] = assignments
     snapshot.to_csv(out / "split_manifest.csv", index=False)
-    (out / "versions.json").write_text(json.dumps({"python": platform.python_version(), "numpy": np.__version__,
-                                                     "pandas": pd.__version__, "sklearn": sklearn.__version__,
-                                                     "scipy": scipy.__version__}, indent=2))
+    versions = {"python": platform.python_version(), "numpy": np.__version__,
+                "pandas": pd.__version__, "sklearn": sklearn.__version__, "scipy": scipy.__version__}
+    if kind == "frozen":
+        import torch
+        import torchvision
+        versions.update({"torch": torch.__version__, "torchvision": torchvision.__version__})
+    (out / "versions.json").write_text(json.dumps(versions, indent=2))
     image = image_features(train_frame, root, kind, checkpoint)
     modes = ["image_only", "2a_image_text"] + (["2b_image_text_gold"] if enable_2b else [])
     for mode in modes:

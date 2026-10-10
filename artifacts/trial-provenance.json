@@ -1,0 +1,9 @@
+{
+  "archive": "trialdataSemEval2027Task9.zip",
+  "archive_sha256": "93a18d5e8cef7e4ccfbadafa0534d16d3dfb4361035b72691579e9d619854b36",
+  "source": "https://propaganda.math.unipd.it/semeval2027task9/data/trialdataSemEval2027Task9.zip",
+  "examples": 20,
+  "labels": 14,
+  "scope": "Public organizer trial data; not the full competition training set",
+  "text_labels": "Union of paragraph frames from subtask-1-annotations.txt, used only as Subtask 2b context"
+}

@@ -1,0 +1,59 @@
+{
+  "rows_by_split_language": [
+    {
+      "split": "train",
+      "language": "BG",
+      "count": 5
+    },
+    {
+      "split": "train",
+      "language": "EN",
+      "count": 5
+    },
+    {
+      "split": "train",
+      "language": "PT",
+      "count": 5
+    },
+    {
+      "split": "train",
+      "language": "RU",
+      "count": 5
+    }
+  ],
+  "train_label_counts": {
+    "Economic": 0,
+    "Capacity_and_resources": 1,
+    "Morality": 0,
+    "Fairness_and_equality": 0,
+    "Legality_Constitutionality_and_jurisprudence": 1,
+    "Policy_prescription_and_evaluation": 1,
+    "Crime_and_punishment": 3,
+    "Security_and_defense": 3,
+    "Health_and_safety": 3,
+    "Quality_of_life": 2,
+    "Cultural_identity": 2,
+    "Public_opinion": 2,
+    "Political": 5,
+    "External_regulation_and_reputation": 0
+  },
+  "train_label_cardinality": {
+    "2": 3,
+    "1": 14,
+    "3": 1,
+    "0": 2
+  },
+  "errors": [],
+  "exact_duplicates": {
+    "images": [],
+    "articles": []
+  },
+  "same_dhash_candidates": [],
+  "train_dev_group_overlap": [],
+  "text_image_context_comparison": {
+    "rows_with_any_text_frame": 20,
+    "rows_with_any_image_frame": 18,
+    "rows_with_any_shared_frame": 15,
+    "rows_with_different_frame_sets": 20
+  }
+}

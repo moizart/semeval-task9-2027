@@ -2,9 +2,28 @@
 
 Assignment 1 implementation for Subtask 2. The original plan is in `PLAN.md`. Each row represents one **image** with its associated article. The image's zero or more framing labels are the target. Article framing labels, if supplied, are context for variant 2b only.
 
+For a start-to-finish explanation of the task, code, local tests, outputs, and Assignment 1 deliverables, read [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md).
+
 ## macOS setup
 
 For a local Mac checkout, `scripts/setup-mac.sh` clones or updates the `work` branch, creates `.venv`, installs the base requirements, and runs the contract tests. Its default target is `/Users/abdulmoiz/Documents/Semeval Task9`. It selects a working Python 3.11–3.13 installation (preferring 3.12) and can rebuild a partial `.venv` left by a failed setup. It stops if the target contains unrelated files. The script does not download organizer data or a pretrained checkpoint.
+
+## Run the public organizer trial from scratch
+
+The public [trial archive](https://propaganda.math.unipd.it/semeval2027task9/data/trialdataSemEval2027Task9.zip) has 20 labeled Subtask 2 images, five per language. It is a pipeline demonstration, **not** the full competition training data. From the repository root, after installing `requirements.txt`:
+
+```bash
+curl -fL 'https://propaganda.math.unipd.it/semeval2027task9/data/trialdataSemEval2027Task9.zip' -o data/trial.zip
+python -m framing prepare-trial --archive data/trial.zip --out data
+python -m framing audit --manifest data/manifest.csv --labels data/framing-labels.txt --out runs/trial/audit
+python -m framing eda --manifest data/manifest.csv --labels data/framing-labels.txt --out runs/trial/eda
+python -m framing train --manifest data/manifest.csv --labels data/framing-labels.txt --out runs/trial/classical --model classical --enable-2b --seed 42
+python -m pip install -r requirements-pretrained.txt
+python -m framing train --manifest data/manifest.csv --labels data/framing-labels.txt --out runs/trial/frozen --model frozen --checkpoint torchvision:resnet18 --enable-2b --seed 42
+python -m unittest discover -s tests -v
+```
+
+The importer checks the ZIP's image-to-article pairs, copies its exact machine labels from `labels.txt`, combines paragraph text frames for 2b context, and writes `data/manifest.csv` plus `data/trial-provenance.json`. The ResNet-18 weights download from PyTorch on the first frozen run and are cached. Results appear in `runs/trial/`: `audit/audit.json`, `eda/eda.pdf`, and each model folder's `metrics.json` and `evaluation_predictions.csv`. A checked-in snapshot of the trial EDA and metrics is under `artifacts/`.
 
 ## Input contract
 
@@ -22,7 +41,7 @@ Create `data/manifest.csv` with these columns:
 | `group` | Optional leakage group (article ID or image/template cluster); defaults to article path |
 | `source` | Optional source identifier for EDA |
 
-Rows with `split=dev` may leave `image_labels` blank; a blank train cell means an explicitly unframed image. Use the organizer's `framing-labels.txt` as `data/framing-labels.txt`, one exact label per line. The article/image mapping must be checked against the starter kit. The manifest is deliberately explicit because that mapping and the 2b annotation layout are not available yet. Do not infer a match from similar filenames without checking it. Set `image` to the exact submission identifier and `image_path` to its local path when it lives in a subdirectory.
+Rows with `split=dev` may leave `image_labels` blank; a blank train cell means an explicitly unframed image. Use the exact machine labels expected by the gold files. In the public trial archive these are in `labels.txt`; the separately linked task-page `framing-labels.txt` uses readable spelling and does not match the gold strings. The article/image mapping must be checked against the starter kit for any later dataset. The trial importer verifies matching stems for its own archive; do not assume that rule for the full training data without checking it. Set `image` to the exact submission identifier and `image_path` to its local path when it lives in a subdirectory.
 
 ## Commands
 
@@ -37,7 +56,7 @@ python -m framing predict --run runs/classical/2a_image_text --manifest data/man
 python -m framing score --gold data/local-gold.tsv --response runs/local-response.tsv --labels data/framing-labels.txt --none-mode exclude
 ```
 
-`train` produces `image_only`, `2a_image_text`, and, when all training rows have text labels, `2b_image_text_gold` comparisons. The frozen model requires `requirements-pretrained.txt` and a locally available Hugging Face vision checkpoint (for example a CLIP or ViT image encoder). The checkpoint is frozen; only logistic heads are fit. The commands never download a checkpoint implicitly.
+`train` produces `image_only`, `2a_image_text`, and, with `--enable-2b` and verified text labels, `2b_image_text_gold` comparisons. The frozen model requires `requirements-pretrained.txt`. `torchvision:resnet18` uses frozen ImageNet-pretrained ResNet-18 weights and downloads them on first use. A locally available Hugging Face vision checkpoint is another option and is never downloaded implicitly. Only logistic heads are fit.
 
 The internal split is grouped into fit, threshold-calibration, and held-out evaluation partitions. Thresholds are chosen on calibration only. Results are exploratory until the official scorer is run. In particular, the task page's `None` statement for Subtask 2 says “no framing in text”; `--none-mode` controls provisional local treatment (`exclude` or `include`). The default excludes unframed rows from true-positive accounting, while still counting predictions on them as false positives.
 
@@ -51,4 +70,4 @@ cd report && latexmk -pdf main.tex
 
 ## Remaining inputs
 
-The dataset ZIP, exact label list, starter kit/scorer, and a pretrained checkpoint are absent from this workspace. Once supplied, check the article mapping and scorer's empty-label behavior; then run the workflow and replace the pending tables and interpretations in `report/main.tex` with measured results. The official site says detailed submission instructions will follow. Confirm final dates and allowed external resources there before participation.
+The public trial ZIP, exact machine labels, and a pretrained ResNet-18 baseline have been exercised. The **full training dataset**, starter kit, and official scorer are still absent from this workspace. The report contains measured trial results only; its three-image evaluation is too small for a meaningful competition estimate. Once full data are supplied, check their mapping and scorer's empty-label behavior, rerun the workflow, and replace trial results in `report/main.tex` before submission. The subject name and code on the cover also need confirmation. The official site says detailed competition submission instructions will follow; confirm final dates and allowed external resources there.

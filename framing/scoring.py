@@ -13,8 +13,7 @@ def read_tsv(path: Path, labels: list[str]) -> dict[str, set[str]]:
     for number, raw in enumerate(path.read_text(encoding="utf-8-sig").splitlines(), start=1):
         fields = raw.split("\t")
         image = fields[0]
-        if len(fields) < 2:
-            raise ValueError(f"Missing tab-separated framing field at line {number}")
+        # The trial gold uses a filename-only line for an unframed image.
         values = {item for item in fields[1:] if item}
         if not image or image in rows:
             raise ValueError(f"Empty or duplicate image name at line {number}")

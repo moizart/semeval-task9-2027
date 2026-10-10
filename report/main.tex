@@ -1,72 +1,131 @@
 \documentclass[11pt]{article}
 \usepackage[margin=1in]{geometry}
-\usepackage{amsmath,booktabs,graphicx,hyperref}
-\title{Image Framing in Multilingual News: Assignment 1 Baselines}
-\author{Team details pending}
-\date{Draft, 10 October 2026}
+\usepackage{amsmath,booktabs,graphicx,hyperref,array}
+\usepackage[T1]{fontenc}
 \begin{document}
-\maketitle
+\begin{titlepage}
+\centering
+\vspace*{1.1in}
+{\Large\bfseries Subject: [NAME TO CONFIRM]\par}
+\vspace{0.12in}
+{\large\bfseries Subject code: [CODE TO CONFIRM]\par}
+\vspace{0.65in}
+{\Huge\bfseries Assignment 1\par}
+\vspace{0.22in}
+{\Large SemEval 2027 Task 9, Subtask 2:\par}
+{\Large Image Framing in Multilingual News\par}
+\vspace{0.65in}
+{\Large\bfseries Group \#12\par}
+\vspace{0.28in}
+\begin{tabular}{ll}
+Abdul Moiz & CMS: 521568\\
+Muhammad Ibsham Tariq & CMS: 502451\\
+Abdullah Khalil & CMS: 501492\\
+Zia Ur Rehman & CMS: 511386
+\end{tabular}
+\vfill
+{\large Trial-data experimental report\\10 October 2026\par}
+\end{titlepage}
 \begin{abstract}
-This draft documents a reproducible baseline workflow for SemEval 2027 Task 9, Subtask 2. Dataset dependent findings and scores will be inserted after access to organizer files and the official scorer. No experimental results are claimed in this draft.
+This report implements and checks image-framing baselines for SemEval 2027 Task 9, Subtask 2. The available public organizer \emph{trial} archive contains 20 labeled article--image pairs, five in each of Bulgarian, English, European Portuguese, and Russian. We audit the data, produce a separate exploratory-data-analysis (EDA) PDF, and compare handcrafted image features with frozen ImageNet-pretrained ResNet-18 features. Both representations are evaluated as image-only, image plus article text (2a), and image plus article text plus gold text-frame context (2b) systems. On one grouped split of 14 fit, three calibration, and three evaluation images, all six variants obtain 0.000 provisional micro-F1. This result verifies the pipeline but cannot estimate competition performance: the held-out set contains only two positive image labels, several frames are absent from the fit set, the full training data and official scorer were unavailable, and the task page is ambiguous about scoring the empty-frame case. The subject name and code on the cover require confirmation.
 \end{abstract}
 
 \section{Introduction and Task Definition}\label{sec:task}
-Given a news article and an associated image, predict zero or more image framings from a shared taxonomy of 14 labels. Subtask 2a provides article text without gold text framings; Subtask 2b also provides gold text framings. The target in both cases remains the image framings. The task includes Bulgarian, English, European Portuguese, and Russian. The official ranking metric is multilabel micro-F1. Image and article framing can disagree, and recurring source templates may create shortcuts. Exact label strings will be loaded from the organizer's \texttt{framing-labels.txt}.
+A news image can foreground a political actor, a threat, a cultural identity, or another interpretation of the accompanying story. In Subtask 2 of the organizer's task~\cite{semeval2027task9}, the observable inputs are an image and its news article; the output is zero or more \emph{image} frames from 14 generic categories. The target is multilabel, so several frames or no frame are valid. The article is context, not the image's gold answer. Subtask 2a does not provide gold article frames, while 2b does. The task covers Bulgarian (BG), English (EN), European Portuguese (PT), and Russian (RU).
+
+Image framing is difficult because visual cues can be subtle, the same photograph can support multiple interpretations, and article and image frames can disagree. Source templates, embedded text, and repeated images may also create shortcuts. The official primary metric is multilabel micro-F1; Section~\ref{sec:eval} explains the local approximation and its remaining scorer uncertainty. This report describes the 20-example trial archive and does not claim a result on the full training or hidden evaluation sets.
 
 \section{Related Work}\label{sec:related}
-Card et al. introduce the Media Frames Corpus and its general framing taxonomy \cite{card2015}. The task description links a large text-image news corpus by Arora et al. \cite{arora2025}; its data and model assumptions must be checked before reuse. CLIP demonstrates transferable frozen visual representations \cite{radford2021}, motivating a frozen-encoder baseline. The organizer's SemEval 2023 media-analysis reference and two additional directly relevant papers will be reviewed when the full papers are available. For each, the final version will compare setup, data, model, metric, and limitations.
+Card et al.~\cite{card2015} created the Media Frames Corpus, annotating frame cues in US news text across issues. Its taxonomy motivates the present labels, but its text spans and policy-focused news differ from an image target. Piskorski et al.~\cite{piskorski2023} describe SemEval-2023 Task 3, which includes multilingual news framing among three tasks; its framing subtask predicts generic frames in text, so its modeling and evaluation ideas do not directly solve image framing. Arora et al.~\cite{arora2025} explicitly compare frames in news text and images using vision-language models at scale. Their multimodal analysis motivates checking agreement between modalities, but their automatically obtained labels and model setup are distinct from this trial archive. He et al.~\cite{he2016} introduced residual visual networks; we use a frozen ResNet-18 ImageNet encoder as a small pretrained visual baseline. A frozen object-recognition representation may miss abstract framing cues, which is a limitation to test on more data. An organizer baseline paper for the 2027 task was not available with the trial archive.
 
 \section{Dataset}\label{sec:data}
-The organizer specifies UTF-8 articles with an optional title on line one, a blank second line, and body from line three. Images may be JPEG, PNG, WebP, or GIF. The training set is labeled; development annotations are withheld. The project manifest records one row per image, its article, language, leakage group, optional source, and image labels. Table~\ref{tab:data} will be populated after obtaining the data. Raw data are not modified.
-\begin{table}[h]
+The public archive \texttt{trialdataSemEval2027Task9.zip}, dated 4 September 2026 within the archive, was downloaded from the organizer's task site. Its SHA-256 digest is \texttt{93a18d5e8cef7e4ccfbadafa0534d16d3dfb4361035b72691579e9d619854b36}. Each language directory has raw article text, an image, paragraph-level Subtask 1 annotations, and Subtask 2 image gold labels. The importer joins each image to the article with the same stem only after verifying both files exist. It unions paragraph frame labels for the corresponding article to form an explicit 2b context vector; this vector is never used as image ground truth.
+
+The archive's \texttt{labels.txt} contains the exact underscore-separated machine strings used in the gold file. The separately linked task-page \texttt{framing-labels.txt} uses human-readable spelling. Therefore, the importer copies \texttt{labels.txt} into the local machine-label file and validates every gold label against it. The trial gold sometimes writes an unframed image as a filename-only row without a trailing tab; the parser accepts that representation. Table~\ref{tab:data} gives the dataset audit.
+\begin{table}[ht]
 \centering
 \begin{tabular}{lrrr}\toprule
-Language & Training images & Development images & Invalid images\\\midrule
-BG & -- & -- & --\\ EN & -- & -- & --\\ PT & -- & -- & --\\ RU & -- & -- & --\\\bottomrule
+Language & Image--article pairs & Missing/corrupt files & Images with no frame\\\midrule
+Bulgarian & 5 & 0 & 0\\
+English & 5 & 0 & 1\\
+Portuguese & 5 & 0 & 0\\
+Russian & 5 & 0 & 1\\\midrule
+Total & 20 & 0 & 2\\\bottomrule
 \end{tabular}
-\caption{Dataset counts, pending organizer data.}\label{tab:data}
+\caption{Organizer trial data audit. No official development or test examples are included.}\label{tab:data}
+\end{table}
+
+The 20 images have 23 positive label assignments: 14 images have one label, three have two, one has three, and two have none. Four taxonomy labels never occur in the trial images; three others occur only once. There are no exact duplicate image or article files and no identical difference-hash candidates in the local audit. This does not rule out visually related images. Article length ranges from 144 to 1,203 whitespace-separated words (median 346.5). The gold article and image frame sets differ for all 20 pairs, although 15 pairs share at least one frame. The contrast reinforces that text labels must remain context rather than substitutes for image labels.
+
+\begin{table}[ht]
+\centering\footnotesize
+\begin{tabular}{lr@{\hspace{0.45in}}lr}\toprule
+Image frame & Count & Image frame & Count\\\midrule
+Political & 5 & Crime and punishment & 3\\
+Security and defense & 3 & Health and safety & 3\\
+Quality of life & 2 & Cultural identity & 2\\
+Public opinion & 2 & Capacity and resources & 1\\
+Legality, constitutionality, jurisprudence & 1 & Policy prescription and evaluation & 1\\
+Economic & 0 & Morality & 0\\
+Fairness and equality & 0 & External regulation and reputation & 0\\\bottomrule
+\end{tabular}
+\caption{Trial image-label frequency. Display names are shortened for readability; model inputs use exact strings from \texttt{labels.txt}.}\label{tab:labels}
 \end{table}
 
 \section{Exploratory Data Analysis}\label{sec:eda}
-The audit records file failures, exact duplicate images and articles, matching difference hashes as near-duplicate candidates, train/development group overlap, label cardinality, and image-frame co-occurrence. The EDA PDF visualizes frame frequency, co-occurrence, aspect ratio, brightness, saturation, edge density, article length, and language/source distributions. It also displays per-frame standardized positive-minus-negative feature means; these associations may be confounded by language, source, or templates. Each reported pattern will be accompanied by an observation, cautious interpretation, and modeling implication after real data are available. Difference-hash matches require manual review.
+The separate \texttt{trial-eda.pdf} contains labeled plots of frame frequency and co-occurrence, image aspect ratio, brightness, saturation, edge density, article word count, language balance, and frame-feature mean differences. The selected groups address label imbalance, image geometry, color and lighting, visual complexity, article context, and language. Frame-feature differences are standardized by the overall feature standard deviation; they are descriptive associations, not causal effects. With one to five positive examples per observed frame, all such patterns are unstable.
+
+\paragraph{Observation.} English articles have a median length of 754 words, versus 270 for Bulgarian and 269 for Russian in this trial. \emph{Interpretation:} source or language collection practices could explain the gap; it does not establish a framing effect. \emph{Modeling implication:} fit article TF-IDF only on training examples and compare image-only results so article length or language cannot be mistaken for visual understanding.
+
+\paragraph{Observation.} Images tagged \emph{Health and safety} are brighter than other images by 1.43 overall-feature standard deviations in the trial; \emph{Crime and punishment} images are darker by 0.92. \emph{Interpretation:} three positive images in each group are too few to infer a general visual pattern, and source or topic may confound the comparison. \emph{Modeling implication:} include simple brightness statistics in the classical baseline, then check whether the association persists on full training data and across sources.
+
+\paragraph{Observation.} The two \emph{Cultural identity} images have higher aspect ratio than other images by 1.07 overall-feature standard deviations. \emph{Interpretation:} this may reflect photo selection or layout rather than the frame itself. \emph{Modeling implication:} retain geometry as a diagnostic feature, but investigate template and source effects before attributing importance to it.
 
 \section{Feature Engineering}\label{sec:features}
-The classical image representation contains image geometry, luminance and saturation statistics, spatial brightness, edge response, and grayscale/RGB histograms. Article context is represented with fit-only word and bigram TF-IDF. Subtask 2b appends the gold text-frame vector as a separate context feature. The frozen baseline extracts image embeddings from a locally supplied pretrained vision model and fits only linear heads. The current workflow does not perform OCR; this remains a candidate feature after inspection of text-bearing images and resource rules.
+The classical representation uses 59 image features: log dimensions, aspect ratio and area; mean and dispersion of grayscale brightness, saturation, and RGB channels; top, bottom, and center brightness; edge statistics; and grayscale/RGB histograms. Every image is converted to RGB with EXIF orientation applied and resized to at most 256 pixels per side for statistics. Article context uses word and bigram TF-IDF with a 20,000-feature cap, learned only from the fit partition. The 2b variant appends a 14-dimensional binary vector of gold text frames aggregated from paragraphs.
+
+The pretrained representation is the 512-dimensional penultimate output of torchvision ResNet-18 with \texttt{IMAGENET1K\_V1} weights~\cite{he2016}. Its published image transforms resize/crop to 224 pixels and normalize channels. The encoder is frozen; only logistic classifier heads are trained. OCR and explicit article--image semantic similarity were not implemented in this first baseline.
 
 \section{Baseline Models}\label{sec:models}
-For each frame, a regularized, class-weighted logistic classifier estimates a probability. A constant head handles frames absent from the fit partition. Both classical and frozen visual representations are compared as image-only, image-plus-article (2a), and image-plus-article-plus-gold-text-frame (2b, when available) systems. The article feature is context, not a replacement for image supervision.
+For each of 14 image frames, both representations fit a regularized, class-weighted binary logistic regression head. A frame absent from the fit partition receives a constant head; this is recorded rather than silently dropping the frame. The three input settings are image only, image plus article TF-IDF (2a), and image plus article TF-IDF plus gold text-frame vector (2b). These settings expose whether article context changes errors, without equating article framing with image framing. The 2b trial vector is the union of paragraph frames, a documented approximation to the organizer's eventual 2b input contract.
 
 \section{Evaluation Setup}\label{sec:eval}
-Labeled training examples are split by article/template group into fit, calibration, and held-out evaluation partitions. A deterministic search favors language and frame balance. A shared threshold maximizing calibration micro-F1 is selected on calibration data only. The held-out evaluation set is used once for reporting. For aggregate true positives $TP$, false positives $FP$, and false negatives $FN$,
+We use seed 42 and keep article-linked images together. A search over deterministic grouped splits favors frame and language balance, producing 14 fit, three calibration, and three held-out evaluation images. A shared probability threshold is chosen from 0.10 to 0.90 in steps of 0.05 using calibration micro-F1 only. The evaluation images are \texttt{BG\_TRAIL\_1.jpg}, \texttt{EN\_TRAIL\_3.png}, and \texttt{PT\_doc\_2.jpg}. They contain two positive image labels total and one unframed image. The fit split has five constant heads because their frames have no positive examples.
+
+For aggregate true positives $TP$, false positives $FP$, and false negatives $FN$, micro-F1 is
 \begin{equation}\label{eq:micro}
 F_{1,\mathrm{micro}}=\frac{2TP}{2TP+FP+FN}.
 \end{equation}
-Macro-F1 and per-frame precision and recall supplement Equation~\ref{eq:micro}. The organizer page ambiguously refers to \texttt{None} as ``no framing in text'' under Subtask 2. Local scoring can either exclude it or add it as a pseudo-label; final values must use the official scorer once obtained.
+Macro-F1 averages the 14 per-frame F1 values, including frames unsupported in the tiny held-out partition. Per-frame precision and recall are saved with every run. The organizer's Subtask 2 page mentions a \texttt{None} label while referring to \emph{no framing in text}, so its exact image scorer behavior remains unverified. Our provisional local score excludes \texttt{None} as a positive class but counts predictions on unframed images as false positives. No organizer development or test labels were used to choose thresholds.
 
 \section{Results}\label{sec:results}
-\begin{table}[h]
-\centering
-\begin{tabular}{llrr}\toprule
-Representation & Inputs & Micro-F1 & Macro-F1\\\midrule
-Classical & Image only & -- & --\\
-Classical & Image + article (2a) & -- & --\\
-Classical & Image + article + gold text frames (2b) & -- & --\\
-Frozen encoder & Image only & -- & --\\
-Frozen encoder & Image + article (2a) & -- & --\\
-Frozen encoder & Image + article + gold text frames (2b) & -- & --\\\bottomrule
+Table~\ref{tab:results} reports the single held-out trial split. Every variant has zero true positives and thus zero micro- and macro-F1. This is a software integration result, not a credible estimate for a 14-label competition. Classical systems produce more false positives than the frozen encoder; the two representations still cannot be ranked by F1 on this split. Calibration thresholds are especially unstable with three examples.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabular}{llrrrrr}\toprule
+Representation & Inputs & Threshold & $TP$ & $FP$ & $FN$ & Micro-F1\\\midrule
+Classical & Image only & 0.25 & 0 & 9 & 2 & 0.000\\
+Classical & Image + article (2a) & 0.25 & 0 & 9 & 2 & 0.000\\
+Classical & Image + article + text frames (2b) & 0.45 & 0 & 7 & 2 & 0.000\\
+Frozen ResNet-18 & Image only & 0.60 & 0 & 1 & 2 & 0.000\\
+Frozen ResNet-18 & Image + article (2a) & 0.60 & 0 & 1 & 2 & 0.000\\
+Frozen ResNet-18 & Image + article + text frames (2b) & 0.55 & 0 & 1 & 2 & 0.000\\\bottomrule
 \end{tabular}
-\caption{Internal held-out results, pending dataset, labels, and pretrained checkpoint.}\label{tab:results}
+\caption{Provisional local evaluation on three trial images. Macro-F1 is 0.000 for all six variants. These are not official competition scores.}\label{tab:results}
 \end{table}
-All attempted runs, including failures and constant heads, will be reported with package versions, seed, checkpoint identity, and preprocessing.
 
 \section{Error Analysis}\label{sec:errors}
-Saved evaluation predictions contain gold labels, predicted labels, and frame probabilities. The final analysis will examine frequent false positives and negatives, rare-frame recall, co-occurring frames, empty-label errors, image-text disagreement, and repeated source/template patterns. Representative images will be inspected only when licensing and access permit.
+In the image-only evaluation, the classical model predicts Health and safety plus Political for the Security and defense image \texttt{BG\_TRAIL\_1.jpg}. It assigns Security and defense plus Public opinion to the unframed \texttt{EN\_TRAIL\_3.png}. For the Cultural identity image \texttt{PT\_doc\_2.jpg}, it predicts five other frames. The frozen encoder leaves the first two images unframed, correctly avoiding a false positive on the English image but missing the Bulgarian positive label; it predicts Crime and punishment for the Portuguese image. Cultural identity cannot be learned by either head in this split because it is absent from the fit partition. The saved per-image probability CSVs permit further inspection without using the hidden development set.
 
 \section{Discussion}\label{sec:discussion}
-The workflow separates image-only, article-context, and gold-text-frame settings to expose dependence on textual shortcuts. Grouping protects against simple article leakage, but perceptual-hash candidates and source templates still require manual review. The small fixed feature set is interpretable; it may miss objects, composition, and embedded text. Final claims depend on organizer data and scorer verification.
+The importer, audit, plotting, six model configurations, scoring, and response writer run end to end on actual organizer trial files. The reported zero F1 chiefly exposes the limits of this sample and split: four labels do not occur at all, three occur once, five heads are constant after splitting, and the evaluation contains only two positive labels. Gold text frames differ from image frame sets for all 20 pairs, so 2b context can also mislead. Brightness, article-length, and aspect-ratio patterns are hypotheses for checking on the full set, not established findings. The frozen ImageNet representation is a reasonable baseline, but its object categories need not align with abstract frames. The current training command saves heads fit on 14 examples; final organizer submissions should be refit on all permitted labeled training examples after model selection.
 
 \section{Next Steps}\label{sec:next}
-Obtain and validate the organizer data, exact taxonomy, image-to-article mapping, and scorer. Run the audit, inspect duplicate candidates, and record observation/interpretation/implication for selected plots. Train both baseline families, fill Table~\ref{tab:results}, compare local and official metrics, and prepare a validated response file. Confirm submission rules, allowed external models/data, and dates on the competition page.
+Obtain the full organizer training data, starter kit, and official scorer; confirm the article-image mapping, 2b format, external-model rules, and empty-frame scoring. Rebuild the manifest for that data, inspect near-duplicate templates and sources, rerun EDA, and compare the same two baselines on a larger internal split. Add OCR only if text-bearing images warrant it. Replace this trial report's results with full-training experiments and representative error cases before submitting Assignment 1. The instructor's required filename, upload location, and due date were not specified in the supplied guidelines. The subject name and code on this cover also need confirmation.
+
+\section*{Reproducibility}
+From the repository root, download the public trial ZIP, then run \texttt{python -m framing prepare-trial --archive data/trial.zip --out data}. Next run \texttt{python -m framing audit} and \texttt{python -m framing eda} with \texttt{--manifest data/manifest.csv --labels data/framing-labels.txt} and distinct \texttt{--out} directories. Run \texttt{python -m framing train} with the same manifest and label arguments, \texttt{--model classical} or \texttt{--model frozen --checkpoint torchvision:resnet18}, \texttt{--enable-2b --seed 42 --none-mode exclude}, and distinct run folders. Install \texttt{requirements.txt} for the classical system and \texttt{requirements-pretrained.txt} for the frozen system. The run folders store split assignments, package versions, configuration, held-out metrics, probabilities, and models. The trial importer records the archive digest and mapping rule in \texttt{data/trial-provenance.json}. The frozen run used torch 2.5.1+cpu and torchvision 0.20.1+cpu; classical dependencies were installed from the project requirement file. Hardware was a CPU-only cloud runner.
 
 \bibliographystyle{plain}
 \bibliography{references}

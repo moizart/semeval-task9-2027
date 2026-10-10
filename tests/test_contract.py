@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 from pathlib import Path
+from zipfile import ZipFile
 
 import numpy as np
 import pandas as pd
@@ -8,6 +9,7 @@ import pandas as pd
 from framing.data import read_manifest
 from framing.model import metric_bundle, split_groups
 from framing.scoring import score_tsv
+from framing.trial import prepare_trial
 
 
 class ContractTests(unittest.TestCase):
@@ -37,6 +39,34 @@ class ContractTests(unittest.TestCase):
             response.write_text("a.png\t\nb.png\tBad\n")
             with self.assertRaises(ValueError):
                 score_tsv(gold, response, ["A"], "exclude")
+
+    def test_trial_gold_accepts_filename_only_for_unframed_image(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            gold, response = root / "gold.tsv", root / "response.tsv"
+            gold.write_text("a.png\nb.png\tA\n")
+            response.write_text("a.png\t\nb.png\tA\n")
+            self.assertEqual(score_tsv(gold, response, ["A"], "include")["micro_f1"], 1.0)
+
+    def test_trial_import_joins_image_article_and_text_frames(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive = root / "trial.zip"
+            labels = ["Political"] + [f"Other_{i}" for i in range(13)]
+            with ZipFile(archive, "w") as bundle:
+                bundle.writestr("labels.txt", "\n".join(labels))
+                for language in ("BG", "EN", "PT", "RU"):
+                    name = f"{language}_1"
+                    bundle.writestr(f"{language}/raw-documents/{name}.png", b"image")
+                    bundle.writestr(f"{language}/raw-documents/{name}.txt", b"article")
+                    bundle.writestr(f"{language}/subtask-1-annotations.txt", f"{name}.txt\t0\t7\tPolitical\n")
+                    gold = f"{name}.png" if language == "EN" else f"{name}.png\tPolitical"
+                    bundle.writestr(f"{language}/subtask-2-annotations.txt", gold + "\n")
+            result = prepare_trial(archive, root / "data")
+            manifest = pd.read_csv(root / "data/manifest.csv").fillna("")
+            self.assertEqual(result["examples"], 4)
+            self.assertEqual(manifest.loc[manifest.language == "EN", "image_labels"].iloc[0], "")
+            self.assertTrue((manifest.text_labels == "Political").all())
 
     def test_manifest_rejects_unknown_frame(self):
         with tempfile.TemporaryDirectory() as directory:
