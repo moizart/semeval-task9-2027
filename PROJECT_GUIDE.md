@@ -106,10 +106,10 @@ The supplied **Assignment 1: Shared Task / Challenge Project Guidelines** PDF as
 | One EDA plots PDF | `artifacts/release1-eda.pdf` |
 | Audits, split, metrics, prediction evidence | `artifacts/release1-*` |
 | Report source and references | `report/main.tex`, `report/references.bib`; editor compiler passed |
-| Ready-to-upload ZIP and compiled report | Build with `python scripts/build_submission.py`; files appear under `dist/` |
+| Ready-to-upload ZIP with the exported report | Build with `python scripts/build_submission.py`; the ZIP appears under `dist/` |
 | Official scorer/2b/later multilingual data | Not supplied; limitations stated in report |
 
-For Overleaf, upload `report/main.tex` and `report/references.bib`, and keep the EDA PDF as a separate assignment deliverable. The upload ZIP contains both PDFs, the bibliography, the code and the supplied data. Edit the Overleaf link placeholder in its root README before submitting. The guidelines do not state the required filename, upload portal, or deadline; confirm those with the instructor. The current report cover includes **Reinforcement Learning, CS-317, Assignment 1, Group 12** and all four supplied names/CMS numbers. The literature review discusses five related studies, cites the ResNet paper and links the organizer task page. An organizer baseline/system paper was not present in the supplied materials. Shared-task competition submission is separate: obtain its official starter kit/scorer and rules, refit after selection, and submit its required TSV only when the organizer opens that process.
+The upload ZIP contains the PDF exported from Overleaf, the EDA PDF, the code, the supplied data and selected result evidence. Its README links to the user's Overleaf project. Repository-only planning notes, change logs and trial outputs are excluded. The guidelines do not state the required filename, upload portal, or deadline; confirm those with the instructor. The current report cover includes **Reinforcement Learning, CS-317, Assignment 1, Group 12** and all four supplied names/CMS numbers. The literature review discusses five related studies, cites the ResNet paper and links the organizer task page. An organizer baseline/system paper was not present in the supplied materials. Shared-task competition submission is separate: obtain its official starter kit/scorer and rules, refit after selection, and submit its required TSV only when the organizer opens that process.
 
 ## 8. Public trial, if you want the smaller demonstration
 

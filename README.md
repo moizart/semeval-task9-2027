@@ -6,7 +6,7 @@ For a start-to-finish explanation of the task, code, local tests, outputs, and A
 
 ## Assignment upload package
 
-[`submission/README.md`](submission/README.md) is the navigation page inside the upload package, including a placeholder for the Overleaf link. After editing that placeholder, run `python scripts/build_submission.py` to create `dist/Assignment_1_Group_12.zip` and a separate `dist/Assignment_1_Report_Group_12.pdf`. The builder needs `latexmk` and includes the attached data ZIP, code, saved results, LaTeX source, bibliography and compiled report. It checks the finished ZIP for damaged files.
+[`submission/README.md`](submission/README.md) is the navigation page inside the upload package and contains the supplied Overleaf link. Run `python scripts/build_submission.py` to create `dist/Assignment_1_Group_12.zip`. The builder packages the exact report PDF exported from Overleaf, the EDA PDF, selected result evidence, the supplied data ZIP and runnable code. It excludes plans, change logs, report source, trial snapshots and local caches, then checks the finished ZIP for damaged files.
 
 The current ZIP is also available in [`deliverables/Assignment_1_Group_12.zip`](deliverables/Assignment_1_Group_12.zip) for a direct GitHub download.
 
