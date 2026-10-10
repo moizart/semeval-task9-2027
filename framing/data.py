@@ -75,12 +75,12 @@ def image_rgb(path: Path) -> Image.Image:
 
 
 def multilabel(frame: pd.DataFrame, column: str, vocabulary: list[str]) -> np.ndarray:
-    lookup = {label: i for i, label in enumerate(vocabulary)}
-    matrix = np.zeros((len(frame), len(vocabulary)), dtype=np.uint8)
-    for row, raw in enumerate(frame[column]):
-        for label in parse_labels(raw, vocabulary):
-            matrix[row, lookup[label]] = 1
-    return matrix
+    label_columns = {label: column_number for column_number, label in enumerate(vocabulary)}
+    targets = np.zeros((len(frame), len(vocabulary)), dtype=np.uint8)
+    for row_number, raw_labels in enumerate(frame[column]):
+        for label in parse_labels(raw_labels, vocabulary):
+            targets[row_number, label_columns[label]] = 1
+    return targets
 
 
 def file_sha256(path: Path) -> str:

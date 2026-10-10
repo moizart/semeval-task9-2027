@@ -39,6 +39,7 @@ Verified audit of this chunk: all 400 pairs readable, no missing/corrupt files, 
 | `tests/test_contract.py` | Import, manifest, split, empty-row, and scorer contract tests. |
 | `artifacts/release1-*` | Portable audit, EDA PDF, split, scores, versions, and example predictions. |
 | `report/main.tex`, `report/references.bib` | Assignment 1 LaTeX report and bibliography. |
+| `submission/README.md`, `scripts/build_submission.py` | Upload package guide and reproducible ZIP builder. |
 | `Agent.md`, `Changes.md`, `PLAN.md` | Working instructions, complete change log, and original plan. |
 
 Raw extracted image/article files and run folders are regenerated locally and ignored by Git. The original ZIP and compact metadata are committed, so a clone has the entire supplied dataset.
@@ -79,7 +80,7 @@ To inspect results, open `runs/release1/audit/audit.json` for checks; `runs/rele
 
 The **classical baseline** measures image geometry, brightness, saturation, channel statistics, spatial brightness, edge density, and grayscale/color histograms (59 values). The **pretrained baseline** uses a frozen ImageNet ResNet-18 image encoder with a 512-value output. For 2a, each representation is joined with article word/bigram TF-IDF fitted only on the fit split. Fourteen independent class-weighted logistic heads predict the labels. A label absent in the fit subset gets a constant head, recorded in metrics; the absent legality frame cannot be learned from this release.
 
-A deterministic grouped split with seed 42 produced 280 fit, 60 threshold-calibration, and 60 held-out evaluation images. Scaling, TF-IDF, and heads use fit only; calibration chooses a shared probability threshold; evaluation remains untouched until scoring. All four model configurations use the same split. The evaluation has 91 positive frame assignments and ten unframed images. This split is grouped by article ID, but source/template clusters remain to be checked when source metadata or later data become available.
+A deterministic grouped split with seed 42 produced 280 fit, 60 threshold-calibration and 60 held-out evaluation images. The split search uses all training labels to balance the partitions, including labels on the eventual evaluation rows. Scaling, TF-IDF and heads use fit only; calibration chooses a shared probability threshold; evaluation labels are then used for scoring. All four model configurations use the same split. The evaluation has 91 positive frame assignments and ten unframed images. This split is grouped by article ID, but source/template clusters remain to be checked when source metadata or later data become available.
 
 | Model | Input | Local micro-F1 | Local macro-F1 | TP / FP / FN |
 | --- | --- | ---: | ---: | --- |
@@ -105,9 +106,10 @@ The supplied **Assignment 1: Shared Task / Challenge Project Guidelines** PDF as
 | One EDA plots PDF | `artifacts/release1-eda.pdf` |
 | Audits, split, metrics, prediction evidence | `artifacts/release1-*` |
 | Report source and references | `report/main.tex`, `report/references.bib`; editor compiler passed |
+| Ready-to-upload ZIP and compiled report | Build with `python scripts/build_submission.py`; files appear under `dist/` |
 | Official scorer/2b/later multilingual data | Not supplied; limitations stated in report |
 
-For Overleaf, upload `report/main.tex` and `report/references.bib`, and keep the EDA PDF as a separate assignment deliverable. The guidelines do not state the required filename, upload portal, or deadline; confirm those with the instructor. The current report cover includes **Reinforcement Learning, CS-317, Assignment 1, Group 12** and all four supplied names/CMS numbers. An organizer baseline/system paper was not present in the supplied materials; the related-work section cites task and related papers while acknowledging this gap. Shared-task competition submission is separate: obtain its official starter kit/scorer and rules, refit after selection, and submit its required TSV only when the organizer opens that process.
+For Overleaf, upload `report/main.tex` and `report/references.bib`, and keep the EDA PDF as a separate assignment deliverable. The upload ZIP contains both PDFs, the bibliography, the code and the supplied data. Edit the Overleaf link placeholder in its root README before submitting. The guidelines do not state the required filename, upload portal, or deadline; confirm those with the instructor. The current report cover includes **Reinforcement Learning, CS-317, Assignment 1, Group 12** and all four supplied names/CMS numbers. The literature review discusses five related studies, cites the ResNet paper and links the organizer task page. An organizer baseline/system paper was not present in the supplied materials. Shared-task competition submission is separate: obtain its official starter kit/scorer and rules, refit after selection, and submit its required TSV only when the organizer opens that process.
 
 ## 8. Public trial, if you want the smaller demonstration
 

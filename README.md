@@ -4,6 +4,10 @@ Assignment 1 implementation for Subtask 2. The user-supplied **400-pair English 
 
 For a start-to-finish explanation of the task, code, local tests, outputs, and Assignment 1 deliverables, read [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md).
 
+## Assignment upload package
+
+[`submission/README.md`](submission/README.md) is the navigation page inside the upload package, including a placeholder for the Overleaf link. After editing that placeholder, run `python scripts/build_submission.py` to create `dist/Assignment_1_Group_12.zip` and a separate `dist/Assignment_1_Report_Group_12.pdf`. The builder needs `latexmk` and includes the attached data ZIP, code, saved results, LaTeX source, bibliography and compiled report. It checks the finished ZIP for damaged files.
+
 ## macOS setup
 
 For a local Mac checkout, `scripts/setup-mac.sh` clones or updates the `work` branch, creates `.venv`, installs the base requirements, and runs the contract tests. Its default target is `/Users/abdulmoiz/Documents/Semeval Task9`. It selects a working Python 3.11–3.13 installation (preferring 3.12) and can rebuild a partial `.venv` left by a failed setup. It stops if the target contains unrelated files. The script does not download organizer data or a pretrained checkpoint.

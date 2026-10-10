@@ -13,7 +13,7 @@ FEATURE_NAMES = [
     "brightness_std", "saturation_mean", "saturation_std", "edge_density",
     "edge_strength", "top_brightness", "bottom_brightness", "center_brightness",
     "red_mean", "green_mean", "blue_mean", "red_std", "green_std", "blue_std",
-] + [f"gray_hist_{i}" for i in range(16)] + [f"color_hist_{c}_{i}" for c in "rgb" for i in range(8)]
+] + [f"gray_hist_{bin_index}" for bin_index in range(16)] + [f"color_hist_{channel}_{bin_index}" for channel in "rgb" for bin_index in range(8)]
 
 
 def classical_features(path: Path) -> np.ndarray:

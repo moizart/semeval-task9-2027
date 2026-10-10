@@ -13,4 +13,4 @@ Build a reproducible Assignment 1 package for SemEval 2027 Task 9, Subtask 2 (im
 - Prefer a small, understandable baseline over untracked experiments. Save the manifest, split assignments, configuration, package versions, and predictions for each run.
 
 ## Current workflow
-See `README.md` and `PROJECT_GUIDE.md` for commands, `PLAN.md` for the original implementation plan, and `report/main.tex` for the Assignment 1 report.
+See `README.md` and `PROJECT_GUIDE.md` for commands, `PLAN.md` for the original implementation plan and `report/main.tex` for the Assignment 1 report. `submission/README.md` is the upload package guide. After changing any submission input, run `python scripts/build_submission.py` and check the fresh ZIP under `dist/`. Keep the Overleaf link placeholder until the user supplies their project URL.

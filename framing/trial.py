@@ -54,7 +54,7 @@ def prepare_trial(archive: Path, out: Path) -> dict:
         gold_path = folder / "subtask-2-annotations.txt"
         for line_number, line in enumerate(gold_path.read_text(encoding="utf-8-sig").splitlines(), 1):
             fields = line.split("\t")
-            # Trial gold omits the trailing tab for an unframed image.
+            # trial gold omits the trailing tab for an unframed image.
             if not fields[0]:
                 raise ValueError(f"Malformed image annotation {gold_path}:{line_number}")
             image_name = fields[0]
