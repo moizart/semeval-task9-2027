@@ -101,7 +101,7 @@ The supplied **Assignment 1: Shared Task / Challenge Project** PDF asks for task
 | LaTeX report with required sections | `report/main.tex`; currently trial-based. |
 | Literature and organizer baseline/system paper | Related references present; no organizer baseline paper was available in supplied material. Check again before submission. |
 | Official scorer and final submission protocol | Not supplied/verified yet. |
-| Full attached data, subject name/code | Awaiting accessible data parts and course details. |
+| Full attached data | Awaiting accessible data parts. The report cover now has Reinforcement Learning (CS-317). |
 
 For Overleaf, upload `report/main.tex`, `report/references.bib`, and any report figures you add. The separate EDA PDF is an assignment deliverable; keep it as a single file. The provided guidelines do **not** state a required filename, upload portal or deadline, so confirm those with the instructor. For the shared-task competition itself, the organizer's final submission instructions and permitted model/resource rules must be checked separately. Do not submit the three-image trial scores as a full-dataset result.
 
