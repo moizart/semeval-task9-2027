@@ -1,0 +1,10 @@
+{
+  "archive": "data.zip",
+  "archive_sha256": "ad18b9e877abb2f6a469bc7df0e855bebc684ead6a81d0e332765bff8e071fa9",
+  "scope": "Attached Subtask 2 English training release, chunk 1; 400 labeled article-image pairs",
+  "examples": 400,
+  "labels": 14,
+  "label_source": "data/subtask1/SEMEVAL23_FRAMING_INITIAL_TRAIN-A/labels.txt",
+  "article_join": "Verified shared numeric document ID: EN_doc_N_image.jpg -> EN_M_TRAIN_doc_N.txt",
+  "text_frame_labels": "Unavailable for these Subtask 2 articles; separate Subtask 1 corpus is not joined"
+}

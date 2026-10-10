@@ -1,5 +1,12 @@
 data/*
 !data/README.md
+!data/release1/
+data/release1/*
+!data/release1/data.zip
+!data/release1/README.md
+!data/release1/manifest.csv
+!data/release1/framing-labels.txt
+!data/release1/provenance.json
 runs/
 __pycache__/
 *.pyc

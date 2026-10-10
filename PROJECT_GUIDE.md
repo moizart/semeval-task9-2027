@@ -1,118 +1,114 @@
-# Project guide: SemEval 2027 Task 9, Subtask 2 and Assignment 1
+# SemEval 2027 Task 9, Subtask 2: project and Assignment 1 guide
 
-This guide explains what the project does, how its data and code fit together, how to reproduce the current results locally, and what Assignment 1 requires. The **public organizer trial** (20 images) has been imported and tested. The separately attached `data.zip` has not yet been inspected because it exceeds this session's 32 MiB single-file transfer limit. Consequently, the current report and numbers describe the public trial only. Do not present them as full-data or official competition results.
+This is the start-to-finish guide for **Reinforcement Learning (CS-317), Assignment 1, Group 12**. The repository contains the user-supplied first English Subtask 2 training chunk, a verified importer, data audit and EDA, two baseline families, saved held-out results, tests, and a LaTeX report. The code also supports the separate 20-image organizer trial. The attached 400-pair release is **chunk 1**, not proof that the complete multilingual competition data or official scorer have been released.
 
-## 1. What is being predicted?
+## 1. The actual task
 
-SemEval 2027 Task 9 studies framing in multilingual news. **Subtask 2** asks for the frames conveyed by an **image** accompanying a news article. A single image may receive several of 14 frame labels, or no frame. The news article is observable context; its own frames are not the target. The four languages are Bulgarian (BG), English (EN), European Portuguese (PT), and Russian (RU).
+SemEval 2027 Task 9 analyzes frames in news. **Subtask 2 predicts frames conveyed by an image** accompanying an article. The target is a subset of 14 generic frame labels: it may have multiple labels or none. The article is useful context but its labels are not the image's answer. The official primary measure is multilabel micro-F1.
 
-| Variant | Input available to the system | Target |
+| Configuration | Input | Prediction |
 | --- | --- | --- |
-| Image-only diagnostic | Image | Image frame labels |
-| Subtask 2a | Image and article text | Image frame labels |
-| Subtask 2b | Image, article text, and supplied gold text-frame labels | Image frame labels |
+| Image-only diagnostic | Image | Image frames |
+| 2a | Image and article text | Image frames |
+| 2b | Image, article text, supplied gold text-frame labels | Image frames |
 
-The local 2b trial input is the **union of paragraph frame annotations** for an article. This is a documented proxy until the organizer's full-data/starter-kit contract is checked. In the trial, article and image frame sets differ for every pair, so copying text frames as image predictions would be incorrect. The official primary score is multilabel micro-F1. A system response is one TSV row per image, starting with its organizer image filename, followed by zero or more tab-separated frame names. Empty-frame rows need special care: the trial gold includes filename-only rows, whereas the task description mentions an empty field and a `None` case. The local scorer has explicit `--none-mode` options, but it has **not** been verified against an organizer scorer.
+The task covers Bulgarian, English, European Portuguese, and Russian. The **attached first training chunk has English only**. Its separate Subtask 1 corpus does not contain paired gold text-frame labels for the 400 Subtask 2 articles. Thus 2b cannot be run honestly on this release. The 20-image public trial has paragraph labels that we aggregate as a documented 2b proxy; those trial results are separate.
 
-## 2. Data and verified observations
+The response format is one TSV line per image: its exact organizer filename followed by zero or more tab-separated exact machine labels. The task description and public trial differ on the representation of an empty frame set; the local parser accepts both a filename-only row and a trailing tab. The local `--none-mode exclude` score counts frame predictions on an unframed image as false positives and adds no `None` class. **This score is provisional until the official scorer is checked.**
 
-The public [trial ZIP](https://propaganda.math.unipd.it/semeval2027task9/data/trialdataSemEval2027Task9.zip) provides five image/article pairs per language (20 total), image gold, paragraph text annotations, and `labels.txt`. It has 14 exact machine labels. The separate task-page `framing-labels.txt` uses human-readable wording; use the ZIP's `labels.txt` for this gold. `prepare-trial` validates joins and labels, extracts the archive below `data/`, and writes a project manifest. It never runs code from the ZIP.
+## 2. What data is included?
 
-Current trial audit: 20 readable images and articles, no missing or corrupt files, two unframed images, 23 positive image-label assignments, four frames absent from trial images, and three frames occurring once. There are no exact duplicate image or article files in this small sample. Fifteen image/article pairs share at least one frame, although no pair has identical frame sets. The held-out evaluation split has **three images and only two positive labels**, so the measured scores are a pipeline check, not a reliable estimate of model quality.
+The tracked [`data/release1/data.zip`](data/release1/data.zip) is the exact user-uploaded archive, reassembled from three parts. It is 84,957,589 bytes with SHA-256 `ad18b9e877abb2f6a469bc7df0e855bebc684ead6a81d0e332765bff8e071fa9`; its ZIP integrity check passed. The `data/subtask2/` portion contains **400 labeled English image/article pairs**. Each row uses `EN_doc_N_image.jpg` with `EN_M_TRAIN_doc_N.txt`; the importer verifies the numeric join and all 400 image, article, and annotation IDs. Optional HTML files are viewing aids, not model input. The archive also contains separate Subtask 1 text datasets, which remain in the ZIP but are not treated as gold 2b labels for these images.
 
-The newly attached `data.zip` may contain a different structure, more samples, and different split conventions. Its layout, rights, counts, label vocabulary, and mapping must be inspected before adapting the importer, writing full-data findings, or pushing raw files. The user has explicitly asked to commit and push it once available.
+The tracked [`data/release1/manifest.csv`](data/release1/manifest.csv), [`framing-labels.txt`](data/release1/framing-labels.txt), and [`provenance.json`](data/release1/provenance.json) were generated from the archive. The manifest lists each organizer image identifier, local file path after extraction, article path, language, training split, exact image labels, and leakage group. There is **no** `text_labels` column because paired gold text frames are unavailable.
+
+Verified audit of this chunk: all 400 pairs readable, no missing/corrupt files, no exact image/article duplicates or identical difference-hash image candidates, 72 unframed images, and 659 positive image-label assignments. Thirteen of 14 frame categories occur; `Legality_Constitutionality_and_jurisprudence` is absent. Four images carry 13 labels, an annotation pattern worth reviewing. Article lengths are 113–8,366 whitespace-separated words (median 514.5). These are observations about **this release**, not the eventual multilingual evaluation distribution.
 
 ## 3. Repository map
 
-| Path | Purpose |
+| Path | Role |
 | --- | --- |
-| `framing/trial.py` | Import and validate the known public trial layout. |
-| `framing/data.py` | Read labels/manifest, validate label strings and safe paths, load images/articles. |
-| `framing/audit.py` | File checks, descriptive statistics, EDA PDF, and frame-feature associations. |
-| `framing/features.py` | Interpretable image statistics for the classical model. |
-| `framing/model.py` | Grouped splits, image features, article TF-IDF, logistic heads, scoring and predictions. |
-| `framing/scoring.py` | Local TSV response parser and provisional multilabel score. |
-| `framing/__main__.py` | Command-line interface: `prepare-trial`, `audit`, `eda`, `train`, `predict`, `score`. |
-| `tests/test_contract.py` | Input/output and importer contract tests. |
-| `report/main.tex`, `report/references.bib` | Assignment 1 report source and bibliography. |
-| `artifacts/` | Checked-in **derived trial** audit, EDA, splits, metrics and selected predictions. |
-| `data/`, `runs/` | Local raw/working data and generated runs; ignored by Git by default. |
-| `Agent.md`, `Changes.md`, `PLAN.md` | Working rules, change history and original plan. |
+| `framing/release.py` | Validate and import the 400-pair attached training release. |
+| `framing/trial.py` | Import the separate 20-image public organizer trial. |
+| `framing/data.py` | Validate labels and manifest, resolve safe paths, load files. |
+| `framing/audit.py` | Check data quality, compute descriptive features, create one EDA PDF. |
+| `framing/features.py` | Extract 59 interpretable image statistics. |
+| `framing/model.py` | Create grouped splits, fit baseline heads, calibrate, save metrics and predictions. |
+| `framing/scoring.py` | Parse and locally score organizer-style TSV responses. |
+| `framing/__main__.py` | CLI commands: `prepare-release`, `prepare-trial`, `audit`, `eda`, `train`, `predict`, `score`. |
+| `tests/test_contract.py` | Import, manifest, split, empty-row, and scorer contract tests. |
+| `artifacts/release1-*` | Portable audit, EDA PDF, split, scores, versions, and example predictions. |
+| `report/main.tex`, `report/references.bib` | Assignment 1 LaTeX report and bibliography. |
+| `Agent.md`, `Changes.md`, `PLAN.md` | Working instructions, complete change log, and original plan. |
 
-The raw data path can differ from the identifier in a submission. `image` in the manifest is the exact response filename; `image_path` locates the local file. `article` locates its UTF-8 text. `image_labels` and `text_labels` are `|`-separated exact machine labels. `language` is `BG`, `EN`, `PT` or `RU`; `split` is `train`, `dev` or `test`; `group` identifies examples that must stay together during splitting. Only labeled training rows are used for fitting and local evaluation. Development/test labels should remain unknown.
+Raw extracted image/article files and run folders are regenerated locally and ignored by Git. The original ZIP and compact metadata are committed, so a clone has the entire supplied dataset.
 
-## 4. Start on a Mac from scratch
+## 4. Set up on your Mac from scratch
 
-Install Git and a working Python **3.11–3.13** with `venv` and pip. Python 3.12 is preferred. Python 3.14 caused the earlier `ensurepip` failure. If you use Homebrew, `brew install python@3.12` is one way to install it. In Terminal:
+Use a working Python **3.11–3.13**; Python 3.12 is preferred. Python 3.14 previously failed while creating a virtual environment through `ensurepip`. Install Git and Python 3.12 first (`brew install python@3.12` is an option). For a new target folder:
 
 ```bash
 git clone --branch work https://github.com/moizart/semeval-task9-2027.git "/Users/abdulmoiz/Documents/Semeval Task9"
 cd "/Users/abdulmoiz/Documents/Semeval Task9"
-python3.12 -m venv .venv
-./.venv/bin/python -m pip install -r requirements.txt
+bash scripts/setup-mac.sh
+```
+
+If that folder already contains this repository, run `cd "/Users/abdulmoiz/Documents/Semeval Task9"` and `bash scripts/setup-mac.sh`; the script fetches and fast-forwards `work`, selects a working Python, installs base dependencies in `.venv`, and runs contract tests. It refuses to overwrite an unrelated nonempty folder. The repository ZIP is about 85 MB, so clone/pull requires time and space. The setup script does not extract the dataset or download pretrained weights.
+
+On any platform, manual setup is `python3.12 -m venv .venv`, then `./.venv/bin/python -m pip install -r requirements.txt`. Use `./.venv/bin/python` in every command below; activating `.venv` lets you shorten it to `python`.
+
+## 5. Reproduce the attached-release workflow
+
+From the repository root:
+
+```bash
+./.venv/bin/python -m framing prepare-release --archive data/release1/data.zip --out data/release1
 ./.venv/bin/python -m unittest discover -s tests -v
+./.venv/bin/python -m framing audit --manifest data/release1/manifest.csv --labels data/release1/framing-labels.txt --out runs/release1/audit
+./.venv/bin/python -m framing eda --manifest data/release1/manifest.csv --labels data/release1/framing-labels.txt --out runs/release1/eda
+./.venv/bin/python -m framing train --manifest data/release1/manifest.csv --labels data/release1/framing-labels.txt --out runs/release1/classical --model classical --seed 42 --none-mode exclude
+./.venv/bin/python -m pip install -r requirements-pretrained.txt
+./.venv/bin/python -m framing train --manifest data/release1/manifest.csv --labels data/release1/framing-labels.txt --out runs/release1/frozen --model frozen --checkpoint torchvision:resnet18 --seed 42 --none-mode exclude
 ```
 
-If the repository is already there, use `git pull --ff-only origin work` inside it before running the remaining commands. Alternatively, from an existing checkout run `bash scripts/setup-mac.sh`; the script checks the target repository, chooses a working Python 3.11–3.13, rebuilds a partial `.venv`, installs base dependencies, and runs tests. It will stop if the target folder contains unrelated files. Install `requirements-pretrained.txt` only for the pretrained run. Internet access is needed to fetch the public trial and first-use pretrained weights.
+`prepare-release` extracts only the 400 Subtask 2 images and paired articles under `data/release1/extracted/`, validates labels and joins, and writes the manifest and provenance. It reads ZIP contents as data and does not run embedded files. Do **not** add `--enable-2b`: no paired gold text-frame input exists. The frozen run downloads torchvision's pretrained ResNet-18 weights once and caches them; it can take a few minutes on a CPU. On this runner, PyTorch's default home cache was read-only, so `TORCH_HOME=/tmp/semeval-torch` was set. A normal Mac home directory does not usually need that override.
 
-## 5. Reproduce the verified public-trial experiment
+To inspect results, open `runs/release1/audit/audit.json` for checks; `runs/release1/eda/eda.pdf` for the required single EDA plots PDF; and `runs/release1/{classical,frozen}/{image_only,2a_image_text}/metrics.json` and `evaluation_predictions.csv` for held-out scores, labels, probabilities and errors. Each family also saves `split_manifest.csv` and `versions.json`. The checked-in [`artifacts/README.md`](artifacts/README.md) explains the portable output snapshot.
 
-Run these from the repository root after setup. On macOS, use `./.venv/bin/python` in place of `python` if the environment is not activated.
+## 6. How the models and evaluation work
 
-```bash
-curl -fL 'https://propaganda.math.unipd.it/semeval2027task9/data/trialdataSemEval2027Task9.zip' -o data/trial.zip
-python -m framing prepare-trial --archive data/trial.zip --out data
-python -m framing audit --manifest data/manifest.csv --labels data/framing-labels.txt --out runs/trial/audit
-python -m framing eda --manifest data/manifest.csv --labels data/framing-labels.txt --out runs/trial/eda
-python -m framing train --manifest data/manifest.csv --labels data/framing-labels.txt --out runs/trial/classical --model classical --enable-2b --seed 42 --none-mode exclude
-python -m pip install -r requirements-pretrained.txt
-python -m framing train --manifest data/manifest.csv --labels data/framing-labels.txt --out runs/trial/frozen --model frozen --checkpoint torchvision:resnet18 --enable-2b --seed 42 --none-mode exclude
-```
+The **classical baseline** measures image geometry, brightness, saturation, channel statistics, spatial brightness, edge density, and grayscale/color histograms (59 values). The **pretrained baseline** uses a frozen ImageNet ResNet-18 image encoder with a 512-value output. For 2a, each representation is joined with article word/bigram TF-IDF fitted only on the fit split. Fourteen independent class-weighted logistic heads predict the labels. A label absent in the fit subset gets a constant head, recorded in metrics; the absent legality frame cannot be learned from this release.
 
-Look at `runs/trial/audit/audit.json` for data checks, `runs/trial/eda/eda.pdf` for the single EDA plots PDF, and `runs/trial/{classical,frozen}/{image_only,2a_image_text,2b_image_text_gold}/metrics.json` for model results. Each model folder also saves `evaluation_predictions.csv` with gold labels, predictions, and probabilities. `split_manifest.csv` fixes the exact fit/calibration/evaluation assignments, and `versions.json` records the environment. `artifacts/` contains a portable snapshot of selected trial outputs. The pretrained run downloads torchvision ResNet-18 ImageNet weights on first use and may take longer on a CPU.
+A deterministic grouped split with seed 42 produced 280 fit, 60 threshold-calibration, and 60 held-out evaluation images. Scaling, TF-IDF, and heads use fit only; calibration chooses a shared probability threshold; evaluation remains untouched until scoring. All four model configurations use the same split. The evaluation has 91 positive frame assignments and ten unframed images. This split is grouped by article ID, but source/template clusters remain to be checked when source metadata or later data become available.
 
-The classical model uses 59 interpretable image statistics, including geometry, brightness, color, edge density, and histograms. The pretrained baseline uses a **frozen** ResNet-18 encoder (512 image features). Both add article word/bigram TF-IDF for 2a, then a 14-value gold text-frame vector for 2b. Fourteen independent class-weighted logistic heads make multilabel predictions. The grouped split keeps linked examples together: 14 fit, three threshold-calibration, and three evaluation images in the trial. The fit set alone determines scaling, TF-IDF and heads; calibration selects a common probability threshold; evaluation is held out. With so little data, several heads never see a positive example.
+| Model | Input | Local micro-F1 | Local macro-F1 | TP / FP / FN |
+| --- | --- | ---: | ---: | --- |
+| Classical | Image only | 0.272 | 0.218 | 50 / 227 / 41 |
+| Classical | Image + article (2a) | 0.283 | 0.219 | 51 / 219 / 40 |
+| Frozen ResNet-18 | Image only | 0.309 | 0.224 | 46 / 161 / 45 |
+| Frozen ResNet-18 | Image + article (2a) | 0.308 | 0.223 | 46 / 162 / 45 |
 
-All six trial configurations scored **0.000 local held-out micro-F1 and macro-F1**. For classical image-only/2a/2b, false positives were 9/9/7 and false negatives were 2/2/2; for frozen variants, false positives were 1/1/1 and false negatives were 2/2/2. These numbers demonstrate that importing, modeling and scoring complete, but they do not rank the models meaningfully. The trial has no official dev/test cases and the organizer scorer has not been checked.
+These are **internal, provisional held-out scores**, not official competition results. The frozen model's selected 0.10 threshold is at the lower edge of the calibration search and produces many false positives. The small difference between 2a and image-only does not prove that text context is useless. The report analyzes representative errors. The saved heads are fit on only the 280 fit examples and are not final submission refits.
 
-## 6. Test your own data and inspect results
+To check response formatting, `predict` writes one TSV row per image. For example, `./.venv/bin/python -m framing predict --run runs/release1/frozen/2a_image_text --manifest data/release1/manifest.csv --labels data/release1/framing-labels.txt --split train --out runs/release1/format-check.tsv`. Because this command predicts on known training rows, use it only as a **format check**, never as held-out performance. To score a response against local gold, use `python -m framing score --gold path/to/gold.tsv --response path/to/response.tsv --labels data/release1/framing-labels.txt --none-mode exclude`. The scorer requires the exact same image-name set and valid labels in both files.
 
-Once the attached full archive is available and its structure verified, the project needs an importer/manifest specific to it. Do **not** pass an unknown ZIP to `prepare-trial`: that command expects the public trial layout. If constructing a manifest by hand, first inspect `README.md`'s input contract and keep image filenames, article paths, language, split, image labels, text labels and leakage groups accurate. Then run `audit` and inspect every reported error before EDA or training. Use a new `--out` folder so the trial run remains reproducible. If 2b text frames are missing, omit `--enable-2b`; an empty column does not mean supplied gold frames.
+For a later organizer dataset, build a manifest with `image`, `image_path`, `article`, `language`, `split`, `image_labels`, and `group`. Use exact response identifiers in `image` and local paths relative to the manifest directory in `image_path`/`article`. Add `text_labels` only when the organizer supplies paired gold article frames; do not infer them from the target or unrelated text data. Audit every file and rerun models in a new output directory. Hidden dev/test labels must not guide thresholds or features.
 
-To produce a development response after training, select a run such as `runs/trial/classical/2a_image_text`, and provide a manifest whose dev rows have the correct local image/article paths:
+## 7. Assignment 1 and what to submit
 
-```bash
-python -m framing predict --run runs/trial/classical/2a_image_text --manifest data/manifest.csv --labels data/framing-labels.txt --split dev --out runs/dev-response.tsv
-python -m framing score --gold data/local-gold.tsv --response runs/dev-response.tsv --labels data/framing-labels.txt --none-mode exclude
-```
+The supplied **Assignment 1: Shared Task / Challenge Project Guidelines** PDF asks for black-box and white-box task understanding; dataset size, labels, imbalance and quality checks; roughly 4–8 justified task-relevant EDA feature groups; and an **observation → interpretation → modeling implication** for patterns discussed. It requires **one PDF of relevant, self-explanatory EDA plots without traditional figure captions**, at least one interpretable classical baseline, one pretrained baseline, an explanation of the official metric, literature review, evaluation, error analysis, and a reproducible LaTeX report prepared using Overleaf. Its section list is: Introduction and Task Definition; Related Work; Dataset; Exploratory Data Analysis; Feature Engineering; Baseline Models; Evaluation Setup; Results; Error Analysis; Discussion; Next Steps.
 
-The second command is only valid if you have **local gold** for exactly those images. Never use hidden organizer dev/test answers for fitting or threshold choice. For the real organizer submission, use its required response validator/scorer and exact image identifiers once those tools are available. The saved model is fitted on the trial fit partition, not refitted on all training rows, so it is not yet a final submission model.
-
-## 7. Assignment 1 requirements and current state
-
-The supplied **Assignment 1: Shared Task / Challenge Project** PDF asks for task understanding, minimum dataset checks, about 4–8 justified feature groups, observation → interpretation → modeling implication for selected EDA, one PDF containing self-explanatory EDA plots, a classical feature-based baseline, a pretrained baseline, explanation of official metrics, literature review, evaluation and error analysis. Its prescribed LaTeX report sections are: Introduction and Task Definition; Related Work; Dataset; Exploratory Data Analysis; Feature Engineering; Baseline Models; Evaluation Setup; Results; Error Analysis; Discussion; Next Steps. It asks for BibTeX citations and table/figure cross-references, and specifies Overleaf for report writing.
-
-| Deliverable | Present state |
+| Assignment item | File/status |
 | --- | --- |
-| Code, tests, setup and reproducible commands | Present; exercised on public trial. |
-| Selective EDA as one PDF | `artifacts/trial-eda.pdf`; needs regeneration and interpretation on full data. |
-| Classical and pretrained baselines | Both run for image-only, 2a and trial-proxy 2b. |
-| Held-out results and errors | Present for a tiny trial split; full-data runs pending. |
-| LaTeX report with required sections | `report/main.tex`; currently trial-based. |
-| Literature and organizer baseline/system paper | Related references present; no organizer baseline paper was available in supplied material. Check again before submission. |
-| Official scorer and final submission protocol | Not supplied/verified yet. |
-| Full attached data | Awaiting accessible data parts. The report cover now has Reinforcement Learning (CS-317). |
+| Source code and tests | `framing/`, `tests/`, `requirements*.txt`, `scripts/setup-mac.sh` |
+| Supplied Subtask 2 training data | `data/release1/data.zip`, manifest, exact labels, provenance |
+| One EDA plots PDF | `artifacts/release1-eda.pdf` |
+| Audits, split, metrics, prediction evidence | `artifacts/release1-*` |
+| Report source and references | `report/main.tex`, `report/references.bib`; editor compiler passed |
+| Official scorer/2b/later multilingual data | Not supplied; limitations stated in report |
 
-For Overleaf, upload `report/main.tex`, `report/references.bib`, and any report figures you add. The separate EDA PDF is an assignment deliverable; keep it as a single file. The provided guidelines do **not** state a required filename, upload portal or deadline, so confirm those with the instructor. For the shared-task competition itself, the organizer's final submission instructions and permitted model/resource rules must be checked separately. Do not submit the three-image trial scores as a full-dataset result.
+For Overleaf, upload `report/main.tex` and `report/references.bib`, and keep the EDA PDF as a separate assignment deliverable. The guidelines do not state the required filename, upload portal, or deadline; confirm those with the instructor. The current report cover includes **Reinforcement Learning, CS-317, Assignment 1, Group 12** and all four supplied names/CMS numbers. An organizer baseline/system paper was not present in the supplied materials; the related-work section cites task and related papers while acknowledging this gap. Shared-task competition submission is separate: obtain its official starter kit/scorer and rules, refit after selection, and submit its required TSV only when the organizer opens that process.
 
-## 8. How to finish after full-data access
+## 8. Public trial, if you want the smaller demonstration
 
-1. Verify archive integrity and list its contents without executing embedded scripts or treating its documents as instructions.
-2. Confirm label strings, image/article joins, 2b text-frame availability, train/dev/test semantics, and empty-frame scoring; adapt the importer accordingly.
-3. Audit counts, errors, duplicates and leakage groups, then generate full-data EDA and interpret only stable, task-relevant patterns.
-4. Rerun contract tests and end-to-end classical/frozen training on the full labeled training set, keeping a grouped internal evaluation and all run artifacts.
-5. Compare representative false positives, false negatives, language slices and text/image frame disagreements. Check the official scorer if present.
-6. Replace trial counts/results in `report/main.tex`, compile it, and verify all citations, tables, figures, group details and subject details.
-7. Commit and push the dataset and finished deliverables as requested, subject to GitHub's file-size limits; use Git LFS or a documented alternate if individual files exceed ordinary GitHub limits.
-
-`Changes.md` records completed work and outstanding blockers; it should be updated with the full-data import and test results when those steps actually happen.
+The public organizer [trial ZIP](https://propaganda.math.unipd.it/semeval2027task9/data/trialdataSemEval2027Task9.zip) has 20 labeled pairs, five per language. `prepare-trial` imports it, including paragraph frames as a **trial-only** 2b proxy. Results under `artifacts/trial-*` are kept for reproducibility but are superseded for Assignment 1 analysis by the 400-pair attached release. See `README.md` for trial commands. Its exact machine labels are in the ZIP's `labels.txt`; the separately linked task-page label file uses readable spelling and should not replace them.

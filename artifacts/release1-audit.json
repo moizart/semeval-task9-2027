@@ -1,0 +1,44 @@
+{
+  "rows_by_split_language": [
+    {
+      "split": "train",
+      "language": "EN",
+      "count": 400
+    }
+  ],
+  "train_label_counts": {
+    "Economic": 78,
+    "Capacity_and_resources": 44,
+    "Morality": 17,
+    "Fairness_and_equality": 23,
+    "Legality_Constitutionality_and_jurisprudence": 0,
+    "Policy_prescription_and_evaluation": 20,
+    "Crime_and_punishment": 34,
+    "Security_and_defense": 38,
+    "Health_and_safety": 72,
+    "Quality_of_life": 113,
+    "Cultural_identity": 78,
+    "Public_opinion": 45,
+    "Political": 85,
+    "External_regulation_and_reputation": 12
+  },
+  "train_label_cardinality": {
+    "3": 42,
+    "1": 165,
+    "0": 72,
+    "2": 90,
+    "6": 5,
+    "4": 10,
+    "5": 10,
+    "13": 4,
+    "7": 1,
+    "9": 1
+  },
+  "errors": [],
+  "exact_duplicates": {
+    "images": [],
+    "articles": []
+  },
+  "same_dhash_candidates": [],
+  "train_dev_group_overlap": []
+}

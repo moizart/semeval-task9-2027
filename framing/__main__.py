@@ -15,6 +15,9 @@ def main() -> None:
     prepare = sub.add_parser("prepare-trial")
     prepare.add_argument("--archive", required=True, type=Path)
     prepare.add_argument("--out", required=True, type=Path)
+    release = sub.add_parser("prepare-release")
+    release.add_argument("--archive", required=True, type=Path)
+    release.add_argument("--out", required=True, type=Path)
     for name in ("audit", "eda", "train", "predict"):
         item = sub.add_parser(name)
         item.add_argument("--manifest", required=True, type=Path)
@@ -40,6 +43,10 @@ def main() -> None:
     if args.command == "prepare-trial":
         from .trial import prepare_trial
         print(json.dumps(prepare_trial(args.archive, args.out), indent=2))
+        return
+    if args.command == "prepare-release":
+        from .release import prepare_release
+        print(json.dumps(prepare_release(args.archive, args.out), indent=2))
         return
     labels = read_labels(args.labels)
     if args.command == "score":

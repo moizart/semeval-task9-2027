@@ -1,12 +1,28 @@
 # SemEval 2027 Task 9: image framing baselines
 
-Assignment 1 implementation for Subtask 2. The original plan is in `PLAN.md`. Each row represents one **image** with its associated article. The image's zero or more framing labels are the target. Article framing labels, if supplied, are context for variant 2b only.
+Assignment 1 implementation for Subtask 2. The user-supplied **400-pair English training release (chunk 1)** is committed under `data/release1/`; the separate 20-image public trial remains available for a smaller demonstration. The original plan is in `PLAN.md`. Each row represents one **image** with its associated article. The image's zero or more framing labels are the target. Article framing labels, if supplied, are context for variant 2b only.
 
 For a start-to-finish explanation of the task, code, local tests, outputs, and Assignment 1 deliverables, read [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md).
 
 ## macOS setup
 
 For a local Mac checkout, `scripts/setup-mac.sh` clones or updates the `work` branch, creates `.venv`, installs the base requirements, and runs the contract tests. Its default target is `/Users/abdulmoiz/Documents/Semeval Task9`. It selects a working Python 3.11–3.13 installation (preferring 3.12) and can rebuild a partial `.venv` left by a failed setup. It stops if the target contains unrelated files. The script does not download organizer data or a pretrained checkpoint.
+
+## Run the attached 400-pair release
+
+After setup, use the committed ZIP. Activate `.venv` or replace `python` below with `./.venv/bin/python`. The importer validates all 400 image/article/annotation IDs and extracts the necessary Subtask 2 files locally. The release has no paired gold text frames, so **do not use `--enable-2b`**:
+
+```bash
+python -m framing prepare-release --archive data/release1/data.zip --out data/release1
+python -m framing audit --manifest data/release1/manifest.csv --labels data/release1/framing-labels.txt --out runs/release1/audit
+python -m framing eda --manifest data/release1/manifest.csv --labels data/release1/framing-labels.txt --out runs/release1/eda
+python -m framing train --manifest data/release1/manifest.csv --labels data/release1/framing-labels.txt --out runs/release1/classical --model classical --seed 42 --none-mode exclude
+python -m pip install -r requirements-pretrained.txt
+python -m framing train --manifest data/release1/manifest.csv --labels data/release1/framing-labels.txt --out runs/release1/frozen --model frozen --checkpoint torchvision:resnet18 --seed 42 --none-mode exclude
+python -m unittest discover -s tests -v
+```
+
+On the fixed grouped 280/60/60 split, local held-out micro-F1 was 0.272/0.283 for classical image-only/2a and 0.309/0.308 for frozen image-only/2a. These are provisional local scores, not official organizer scores. The audit, EDA PDF, full split, metrics and selected predictions are checked into `artifacts/`; see `PROJECT_GUIDE.md` for interpretation and local Mac commands. The ZIP contains separate Subtask 1 text data, but no gold text-frame labels paired to these 400 Subtask 2 articles.
 
 ## Run the public organizer trial from scratch
 
@@ -60,7 +76,7 @@ python -m framing score --gold data/local-gold.tsv --response runs/local-respons
 
 The internal split is grouped into fit, threshold-calibration, and held-out evaluation partitions. Thresholds are chosen on calibration only. Results are exploratory until the official scorer is run. In particular, the task page's `None` statement for Subtask 2 says “no framing in text”; `--none-mode` controls provisional local treatment (`exclude` or `include`). The default excludes unframed rows from true-positive accounting, while still counting predictions on them as false positives.
 
-Generated run folders contain manifest and split snapshots, config, package versions, metric JSON, per-label scores, and predictions. Raw datasets and generated runs stay ignored by Git.
+Generated run folders contain split snapshots, config, package versions, metric JSON, per-label scores, and predictions. Working extracts and generated runs stay ignored by Git. The user-supplied release ZIP and its compact metadata are tracked.
 
 Build the draft report from its own directory so BibTeX finds `references.bib`:
 
@@ -70,4 +86,4 @@ cd report && latexmk -pdf main.tex
 
 ## Remaining inputs
 
-The public trial ZIP, exact machine labels, and a pretrained ResNet-18 baseline have been exercised. The **full training dataset**, starter kit, and official scorer are still absent from this workspace. The report contains measured trial results only; its three-image evaluation is too small for a meaningful competition estimate. Once full data are supplied, check their mapping and scorer's empty-label behavior, rerun the workflow, and replace trial results in `report/main.tex` before submission. The official site says detailed competition submission instructions will follow; confirm final dates and allowed external resources there.
+The attached first English training chunk and the public trial have both been exercised. Later multilingual training chunks, gold article-frame context paired to Subtask 2 for 2b, the official starter kit, and the official scorer are not in this workspace. The report contains measured results for the attached 400-pair release. Verify the organizer scorer's empty-label behavior and final submission rules when available. The official site says detailed competition instructions will follow; confirm dates and allowed external resources there.

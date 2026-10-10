@@ -10,6 +10,7 @@ from framing.data import read_manifest
 from framing.model import metric_bundle, split_groups
 from framing.scoring import score_tsv
 from framing.trial import prepare_trial
+from framing.release import prepare_release
 
 
 class ContractTests(unittest.TestCase):
@@ -67,6 +68,30 @@ class ContractTests(unittest.TestCase):
             self.assertEqual(result["examples"], 4)
             self.assertEqual(manifest.loc[manifest.language == "EN", "image_labels"].iloc[0], "")
             self.assertTrue((manifest.text_labels == "Political").all())
+
+    def test_attached_release_imports_400_pairs_without_inventing_text_frames(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive = root / "release.zip"
+            labels = ["Political"] + [f"Other_{i}" for i in range(13)]
+            with ZipFile(archive, "w") as bundle:
+                vocabulary = "\n".join(labels) + "\n"
+                for release in ("A", "B"):
+                    bundle.writestr(f"data/subtask1/SEMEVAL23_FRAMING_INITIAL_TRAIN-{release}/labels.txt", vocabulary)
+                lines = []
+                for number in range(1, 401):
+                    bundle.writestr(f"data/subtask2/images/EN_doc_{number}_image.jpg", b"image")
+                    bundle.writestr(f"data/subtask2/images/EN_M_TRAIN_doc_{number}.txt", b"article")
+                    label = "\tPolitical" if number % 2 else ""
+                    lines.append(f"EN_doc_{number}_image.jpg{label}")
+                bundle.writestr("data/subtask2/subtask-2-annotations.txt", "\n".join(lines) + "\n")
+            result = prepare_release(archive, root / "data")
+            manifest = pd.read_csv(root / "data/manifest.csv").fillna("")
+            self.assertEqual(result["examples"], 400)
+            self.assertEqual(len(manifest), 400)
+            self.assertNotIn("text_labels", manifest.columns)
+            self.assertEqual(manifest.loc[0, "article"], "extracted/data/subtask2/images/EN_M_TRAIN_doc_1.txt")
+            self.assertEqual(manifest.loc[1, "image_labels"], "")
 
     def test_manifest_rejects_unknown_frame(self):
         with tempfile.TemporaryDirectory() as directory:
